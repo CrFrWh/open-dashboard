@@ -11,19 +11,43 @@ interface DataUploaderProps {
   onDatasetAdded: (dataset: Dataset) => void;
 }
 
-// Helper functions outside component to avoid dependency issues
+interface ParseResult {
+  data: Record<string, unknown>[];
+  schema: { field: string; type: string }[];
+}
+
+// Utility functions
 const inferType = (value: unknown): string => {
   if (value === null || value === undefined || value === "") return "string";
-  if (!isNaN(Number(value))) return "number";
+  if (!isNaN(Number(value)) && value !== "") return "number";
   if (typeof value === "boolean") return "boolean";
   if (value instanceof Date) return "date";
   return "string";
 };
 
-const parseCSV = (content: string) => {
-  const lines = content.trim().split("\\n");
-  if (lines.length < 2)
+const inferSchemaFromData = (
+  data: Record<string, unknown>[],
+  fields: string[]
+): { field: string; type: string }[] => {
+  return fields.map((field) => {
+    const sampleValues = data.slice(0, 10).map((row) => row[field]);
+    const types = sampleValues.map(inferType);
+    const mostCommonType = types.reduce((a, b) => {
+      const aCount = types.filter((v) => v === a).length;
+      const bCount = types.filter((v) => v === b).length;
+      return aCount >= bCount ? a : b;
+    });
+
+    return { field, type: mostCommonType };
+  });
+};
+
+const parseCSV = (content: string): ParseResult => {
+  const lines = content.trim().split("\n");
+
+  if (lines.length < 2) {
     throw new Error("CSV must have at least a header and one data row");
+  }
 
   const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
   const rows: Record<string, unknown>[] = [];
@@ -46,23 +70,11 @@ const parseCSV = (content: string) => {
     rows.push(row);
   }
 
-  // Infer schema from first few rows
-  const schema = headers.map((field) => {
-    const sampleValues = rows.slice(0, 10).map((row) => row[field]);
-    const types = sampleValues.map(inferType);
-    const mostCommonType = types.reduce((a, b) => {
-      const aCount = types.filter((v) => v === a).length;
-      const bCount = types.filter((v) => v === b).length;
-      return aCount >= bCount ? a : b;
-    });
-
-    return { field, type: mostCommonType };
-  });
-
+  const schema = inferSchemaFromData(rows, headers);
   return { data: rows, schema };
 };
 
-const parseJSON = (content: string) => {
+const parseJSON = (content: string): ParseResult => {
   const parsed = JSON.parse(content);
   let data: Record<string, unknown>[];
 
@@ -83,136 +95,42 @@ const parseJSON = (content: string) => {
     throw new Error("JSON must be an array or object containing an array");
   }
 
-  if (data.length === 0) throw new Error("No data found in JSON");
+  if (data.length === 0) {
+    throw new Error("No data found in JSON");
+  }
 
-  // Infer schema
+  // Collect all unique field names
   const allFields = new Set<string>();
   data.forEach((row) => {
     Object.keys(row).forEach((key) => allFields.add(key));
   });
 
-  const schema = Array.from(allFields).map((field) => {
-    const sampleValues = data.slice(0, 10).map((row) => row[field]);
-    const types = sampleValues.map(inferType);
-    const mostCommonType = types.reduce((a, b) => {
-      const aCount = types.filter((v) => v === a).length;
-      const bCount = types.filter((v) => v === b).length;
-      return aCount >= bCount ? a : b;
-    });
-
-    return { field, type: mostCommonType };
-  });
-
+  const schema = inferSchemaFromData(data, Array.from(allFields));
   return { data, schema };
+};
+
+const getFileParser = (fileName: string) => {
+  const extension = fileName.toLowerCase().split(".").pop();
+
+  switch (extension) {
+    case "csv":
+      return parseCSV;
+    case "json":
+      return parseJSON;
+    default:
+      throw new Error(
+        "Unsupported file type. Please upload CSV or JSON files."
+      );
+  }
+};
+
+const generateDatasetId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 export default function DataUploader({ onDatasetAdded }: DataUploaderProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const inferType = (value: unknown): string => {
-    if (value === null || value === undefined || value === "") return "string";
-    if (!isNaN(Number(value))) return "number";
-    if (typeof value === "boolean") return "boolean";
-    if (value instanceof Date) return "date";
-    return "string";
-  };
-
-  const parseCSV = (
-    content: string
-  ): {
-    data: Record<string, unknown>[];
-    schema: { field: string; type: string }[];
-  } => {
-    const lines = content.trim().split("\\n");
-    if (lines.length < 2)
-      throw new Error("CSV must have at least a header and one data row");
-
-    const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
-    const rows: Record<string, unknown>[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
-      const row: Record<string, unknown> = {};
-
-      headers.forEach((header, index) => {
-        let value: unknown = values[index] || "";
-
-        // Try to convert to number
-        if (!isNaN(Number(value)) && value !== "") {
-          value = Number(value);
-        }
-
-        row[header] = value;
-      });
-
-      rows.push(row);
-    }
-
-    // Infer schema from first few rows
-    const schema = headers.map((field) => {
-      const sampleValues = rows.slice(0, 10).map((row) => row[field]);
-      const types = sampleValues.map(inferType);
-      const mostCommonType = types.reduce((a, b, i, arr) =>
-        arr.filter((v) => v === a).length >= arr.filter((v) => v === b).length
-          ? a
-          : b
-      );
-
-      return { field, type: mostCommonType };
-    });
-
-    return { data: rows, schema };
-  };
-
-  const parseJSON = (
-    content: string
-  ): {
-    data: Record<string, unknown>[];
-    schema: { field: string; type: string }[];
-  } => {
-    const parsed = JSON.parse(content);
-    let data: Record<string, unknown>[];
-
-    if (Array.isArray(parsed)) {
-      data = parsed;
-    } else if (typeof parsed === "object" && parsed !== null) {
-      // If it's an object, try to find an array property
-      const arrayProperty = Object.values(parsed).find((value) =>
-        Array.isArray(value)
-      );
-      if (arrayProperty) {
-        data = arrayProperty as Record<string, unknown>[];
-      } else {
-        // Treat the object as a single row
-        data = [parsed as Record<string, unknown>];
-      }
-    } else {
-      throw new Error("JSON must be an array or object containing an array");
-    }
-
-    if (data.length === 0) throw new Error("No data found in JSON");
-
-    // Infer schema
-    const allFields = new Set<string>();
-    data.forEach((row) => {
-      Object.keys(row).forEach((key) => allFields.add(key));
-    });
-
-    const schema = Array.from(allFields).map((field) => {
-      const sampleValues = data.slice(0, 10).map((row) => row[field]);
-      const types = sampleValues.map(inferType);
-      const mostCommonType = types.reduce((a, b, i, arr) =>
-        arr.filter((v) => v === a).length >= arr.filter((v) => v === b).length
-          ? a
-          : b
-      );
-
-      return { field, type: mostCommonType };
-    });
-
-    return { data, schema };
-  };
 
   const processFile = useCallback(
     async (file: File) => {
@@ -220,23 +138,11 @@ export default function DataUploader({ onDatasetAdded }: DataUploaderProps) {
 
       try {
         const content = await file.text();
-        let parsedData: {
-          data: Record<string, unknown>[];
-          schema: { field: string; type: string }[];
-        };
-
-        if (file.name.toLowerCase().endsWith(".csv")) {
-          parsedData = parseCSV(content);
-        } else if (file.name.toLowerCase().endsWith(".json")) {
-          parsedData = parseJSON(content);
-        } else {
-          throw new Error(
-            "Unsupported file type. Please upload CSV or JSON files."
-          );
-        }
+        const parser = getFileParser(file.name);
+        const parsedData = parser(content);
 
         const dataset: Dataset = {
-          id: Date.now().toString(),
+          id: generateDatasetId(),
           name: file.name,
           data: parsedData.data,
           schema: parsedData.schema,
@@ -244,11 +150,9 @@ export default function DataUploader({ onDatasetAdded }: DataUploaderProps) {
 
         onDatasetAdded(dataset);
       } catch (error) {
-        alert(
-          `Error processing file: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        alert(`Error processing file "${file.name}": ${errorMessage}`);
       } finally {
         setIsProcessing(false);
       }
@@ -267,12 +171,63 @@ export default function DataUploader({ onDatasetAdded }: DataUploaderProps) {
     [processFile]
   );
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false);
+  }, []);
+
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
       files.forEach(processFile);
+
+      // Reset the input value to allow selecting the same file again
+      e.target.value = "";
     },
     [processFile]
+  );
+
+  const handleUploadClick = useCallback(() => {
+    document.getElementById("file-input")?.click();
+  }, []);
+
+  const renderUploadContent = () => {
+    if (isProcessing) {
+      return (
+        <div className="space-y-2">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+          <p>Processing files...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <div className="text-4xl">📁</div>
+        <p className="font-medium">Drop files here or click to browse</p>
+        <p className="text-sm text-gray-600">Supports CSV and JSON files</p>
+      </div>
+    );
+  };
+
+  const renderSupportedFormats = () => (
+    <div className="text-xs text-gray-500">
+      <p>
+        <strong>Supported formats:</strong>
+      </p>
+      <ul className="list-disc list-inside space-y-1 mt-1">
+        <li>
+          <strong>CSV:</strong> Comma-separated values with header row
+        </li>
+        <li>
+          <strong>JSON:</strong> Array of objects or object containing an array
+        </li>
+      </ul>
+    </div>
   );
 
   return (
@@ -280,12 +235,9 @@ export default function DataUploader({ onDatasetAdded }: DataUploaderProps) {
       <div
         className={`upload-zone ${isDragOver ? "dragover" : ""}`}
         onDrop={handleDrop}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragOver(true);
-        }}
-        onDragLeave={() => setIsDragOver(false)}
-        onClick={() => document.getElementById("file-input")?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={handleUploadClick}
       >
         <input
           id="file-input"
@@ -296,34 +248,10 @@ export default function DataUploader({ onDatasetAdded }: DataUploaderProps) {
           className="hidden"
         />
 
-        {isProcessing ? (
-          <div className="space-y-2">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-            <p>Processing files...</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="text-4xl">📁</div>
-            <p className="font-medium">Drop files here or click to browse</p>
-            <p className="text-sm text-gray-600">Supports CSV and JSON files</p>
-          </div>
-        )}
+        {renderUploadContent()}
       </div>
 
-      <div className="text-xs text-gray-500">
-        <p>
-          <strong>Supported formats:</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-1 mt-1">
-          <li>
-            <strong>CSV:</strong> Comma-separated values with header row
-          </li>
-          <li>
-            <strong>JSON:</strong> Array of objects or object containing an
-            array
-          </li>
-        </ul>
-      </div>
+      {renderSupportedFormats()}
     </div>
   );
 }
