@@ -1,0 +1,13 @@
+month,category,region,sales,units
+Jan,Electronics,North,15000,120
+Jan,Clothing,North,8000,200
+Jan,Electronics,South,12000,95
+Feb,Electronics,North,18000,140
+Feb,Clothing,North,9500,220
+Feb,Electronics,South,14000,110
+Mar,Electronics,North,21000,165
+Mar,Clothing,North,11000,250
+Mar,Electronics,South,16000,125
+Apr,Electronics,North,19000,150
+Apr,Clothing,North,10500,230
+Apr,Electronics,South,15000,115

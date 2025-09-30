@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Alice Johnson",
+    "department": "Engineering",
+    "salary": 95000,
+    "years": 3,
+    "location": "San Francisco"
+  },
+  {
+    "id": 2,
+    "name": "Bob Smith",
+    "department": "Marketing",
+    "salary": 70000,
+    "years": 2,
+    "location": "New York"
+  },
+  {
+    "id": 3,
+    "name": "Carol Davis",
+    "department": "Engineering",
+    "salary": 110000,
+    "years": 5,
+    "location": "Seattle"
+  },
+  {
+    "id": 4,
+    "name": "David Wilson",
+    "department": "Sales",
+    "salary": 80000,
+    "years": 4,
+    "location": "Chicago"
+  },
+  {
+    "id": 5,
+    "name": "Eva Brown",
+    "department": "Marketing",
+    "salary": 75000,
+    "years": 1,
+    "location": "Los Angeles"
+  }
+]

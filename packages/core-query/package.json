@@ -1,0 +1,21 @@
+{
+  "name": "@open-dashboard/core-query",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "@open-dashboard/shared": "workspace:*"
+  },
+  "dependencies": {
+    "duckdb": "^1.1.3"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

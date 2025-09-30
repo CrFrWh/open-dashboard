@@ -1,0 +1,12 @@
+{
+  "name": "@open-dashboard/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./types/core.ts",
+  "types": "./types/core.ts",
+  "exports": {
+    "./types": "./types/core.ts",
+    "./utils": "./utils/index.ts"
+  }
+}

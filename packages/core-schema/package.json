@@ -1,0 +1,21 @@
+{
+  "name": "@open-dashboard/core-schema",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "@open-dashboard/shared": "workspace:*"
+  },
+  "dependencies": {
+    "apache-arrow": "^17.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}
