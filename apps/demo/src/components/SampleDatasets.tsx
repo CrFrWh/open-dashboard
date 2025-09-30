@@ -280,6 +280,10 @@ export default function SampleDatasets({
 
       <div className="text-xs text-gray-500 mt-4">
         <p>Click any sample dataset to load it into the dashboard.</p>
+        <p>
+          Hover over a sample and click the delete icon to remove it from this
+          list.
+        </p>
       </div>
     </div>
   );
