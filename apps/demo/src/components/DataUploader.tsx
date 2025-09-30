@@ -62,7 +62,7 @@ const parseCSV = (content: string) => {
   return { data: rows, schema };
 };
 
-const pars  eJSON = (content: string) => {
+const parseJSON = (content: string) => {
   const parsed = JSON.parse(content);
   let data: Record<string, unknown>[];
 
