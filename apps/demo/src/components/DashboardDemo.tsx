@@ -5,7 +5,7 @@ import SampleDatasets from "./SampleDatasets";
 interface Dataset {
   id: string;
   name: string;
-  data: any[];
+  data: unknown[];
   schema: { field: string; type: string }[];
 }
 
@@ -203,7 +203,9 @@ export default function DashboardDemo() {
                         key={field.field}
                         className="border border-gray-200 px-4 py-2"
                       >
-                        {String(row[field.field] || "")}
+                        {String(
+                          (row as Record<string, unknown>)[field.field] || ""
+                        )}
                       </td>
                     ))}
                   </tr>
