@@ -14,7 +14,7 @@
     "build": "tsc -b",
     "build:packages": "tsc -b packages/*/tsconfig.json shared/tsconfig.json",
     "build:clean": "tsc -b --clean",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "husky"

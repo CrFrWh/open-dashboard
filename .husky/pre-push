@@ -1,1 +1,1 @@
-bunx tsc -b --noEmit
+bunx tsc -b
