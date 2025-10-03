@@ -1,7 +1,46 @@
 {
-  "files": [],
+  "compilerOptions": {
+    // Base settings shared by all packages
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "allowSyntheticDefaultImports": true,
+
+    // Strict type checking
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+
+    // Emit settings
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": true,
+    "newLine": "lf"
+  },
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+    { "path": "./shared" },
+    { "path": "./packages/core-parser" },
+    { "path": "./packages/core-schema" },
+    { "path": "./packages/core-query" },
+    { "path": "./packages/ui-widgets" },
+    { "path": "./packages/dashboard-builder" },
+    { "path": "./apps/demo" }
+  ],
+  "files": [],
+  "include": []
 }

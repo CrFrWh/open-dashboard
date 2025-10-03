@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "noEmit": false,
+
+    // React support
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+
+    "paths": {
+      "@open-dashboard/shared": ["../../shared/index.ts"],
+      "@open-dashboard/shared/*": ["../../shared/*"],
+      "@open-dashboard/ui-widgets": ["../ui-widgets/src/index.ts"],
+      "@open-dashboard/ui-widgets/*": ["../ui-widgets/src/*"]
+    },
+
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+
+    "types": ["node"],
+    "typeRoots": ["../../node_modules/@types", "./node_modules/@types"]
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.spec.ts",
+    "**/__tests__/**"
+  ],
+  "references": [{ "path": "../../shared" }, { "path": "../ui-widgets" }]
+}

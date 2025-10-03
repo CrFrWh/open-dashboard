@@ -6,7 +6,19 @@
   "main": "./types/core.ts",
   "types": "./types/core.ts",
   "exports": {
+    ".": "./types/core.ts",
     "./types": "./types/core.ts",
-    "./utils": "./utils/index.ts"
+    "./types/*": "./types/*",
+    "./utils": "./utils/index.ts",
+    "./utils/*": "./utils/*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
   }
 }

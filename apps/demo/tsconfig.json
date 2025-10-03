@@ -1,0 +1,48 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // App doesn't emit declarations
+    "composite": false,
+    "noEmit": true,
+
+    // React support
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+
+    // Path mappings to use workspace packages in development
+    "paths": {
+      "@open-dashboard/core-parser": [
+        "../../packages/core-parser/src/index.ts"
+      ],
+      "@open-dashboard/core-parser/*": ["../../packages/core-parser/src/*"],
+      "@open-dashboard/core-schema": [
+        "../../packages/core-schema/src/index.ts"
+      ],
+      "@open-dashboard/core-schema/*": ["../../packages/core-schema/src/*"],
+      "@open-dashboard/core-query": ["../../packages/core-query/src/index.ts"],
+      "@open-dashboard/core-query/*": ["../../packages/core-query/src/*"],
+      "@open-dashboard/ui-widgets": ["../../packages/ui-widgets/src/index.ts"],
+      "@open-dashboard/ui-widgets/*": ["../../packages/ui-widgets/src/*"],
+      "@open-dashboard/dashboard-builder": [
+        "../../packages/dashboard-builder/src/index.ts"
+      ],
+      "@open-dashboard/dashboard-builder/*": [
+        "../../packages/dashboard-builder/src/*"
+      ],
+      "@open-dashboard/shared": ["../../shared/index.ts"],
+      "@open-dashboard/shared/*": ["../../shared/*"]
+    },
+
+    "typeRoots": ["../../node_modules/@types", "./node_modules/@types"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../../shared" },
+    { "path": "../../packages/core-parser" },
+    { "path": "../../packages/core-schema" },
+    { "path": "../../packages/core-query" },
+    { "path": "../../packages/ui-widgets" },
+    { "path": "../../packages/dashboard-builder" }
+  ]
+}
