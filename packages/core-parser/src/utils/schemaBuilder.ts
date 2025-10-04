@@ -18,22 +18,27 @@ export function buildSchemaFromData(
     // Extract sample values for this field
     const samples = data.map((row) => row[fieldName]);
 
-    // Infer type from samples
+    // Infer type from samples (fieldName is used here!)
     const inference: TypeInferenceResult = inferFieldType(
       fieldName,
       samples,
       sampleSize
     );
 
-    return {
+    // Build field with metadata from inference
+    const field: DataField = {
       name: fieldName,
       type: inference.type,
       nullable: inference.nullable,
       metadata: {
         confidence: inference.confidence,
         sampleSize: Math.min(samples.length, sampleSize),
+        uniqueValueCount: inference.metadata?.uniqueValueCount,
+        warnings: inference.metadata?.warnings,
       },
     };
+
+    return field;
   });
 
   return { fields };
@@ -81,6 +86,15 @@ export function mergeSchemas(
           ...existing,
           type: "string",
           nullable: existing.nullable || field.nullable,
+          metadata: {
+            ...existing.metadata,
+            warnings: [
+              ...(Array.isArray(existing.metadata?.warnings)
+                ? (existing.metadata?.warnings ?? [])
+                : []),
+              `Type conflict: ${existing.type} vs ${field.type}. Defaulting to string.`,
+            ],
+          },
         });
       }
     } else {
@@ -89,4 +103,19 @@ export function mergeSchemas(
   });
 
   return { fields: Array.from(fieldMap.values()) };
+}
+
+/**
+ * Gets a summary of schema warnings (useful for debugging)
+ */
+export function getSchemaWarnings(schema: DatasetSchema): string[] {
+  const warnings: string[] = [];
+
+  schema.fields.forEach((field) => {
+    if (field.metadata?.warnings && Array.isArray(field.metadata.warnings)) {
+      warnings.push(...field.metadata.warnings);
+    }
+  });
+
+  return warnings;
 }
