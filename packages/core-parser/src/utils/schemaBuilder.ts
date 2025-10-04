@@ -18,15 +18,14 @@ export function buildSchemaFromData(
     // Extract sample values for this field
     const samples = data.map((row) => row[fieldName]);
 
-    // Infer type from samples (fieldName is used here!)
+    // Infer type from samples
     const inference: TypeInferenceResult = inferFieldType(
       fieldName,
       samples,
       sampleSize
     );
 
-    // Build field with metadata from inference
-    const field: DataField = {
+    return {
       name: fieldName,
       type: inference.type,
       nullable: inference.nullable,
@@ -37,8 +36,6 @@ export function buildSchemaFromData(
         warnings: inference.metadata?.warnings,
       },
     };
-
-    return field;
   });
 
   return { fields };
@@ -90,7 +87,7 @@ export function mergeSchemas(
             ...existing.metadata,
             warnings: [
               ...(Array.isArray(existing.metadata?.warnings)
-                ? (existing.metadata?.warnings ?? [])
+                ? existing.metadata.warnings
                 : []),
               `Type conflict: ${existing.type} vs ${field.type}. Defaulting to string.`,
             ],
