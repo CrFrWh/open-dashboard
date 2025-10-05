@@ -38,7 +38,6 @@ export default defineConfig({
     testTimeout: 10000,
 
     // Environment
-    environment: "jsdom", // or 'happy-dom'
-    setupFiles: ["./vitest.setup.ts"], // if you have setup files
+    environment: "node",
   },
 });
