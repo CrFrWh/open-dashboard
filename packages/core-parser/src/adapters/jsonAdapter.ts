@@ -20,7 +20,8 @@ export class JSONAdapter implements DataAdapter {
     if (input instanceof File) {
       return (
         input.name.toLowerCase().endsWith(".json") ||
-        input.type === "application/json"
+        input.type === "application/json" ||
+        input.type === "text/json"
       );
     }
     return false;
