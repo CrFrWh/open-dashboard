@@ -93,6 +93,13 @@ export function mergeSchemas(
             ],
           },
         });
+      } else {
+        // Types are the same, merge nullable flags
+        fieldMap.set(field.name, {
+          ...existing,
+          nullable: existing.nullable || field.nullable,
+          metadata: existing.metadata,
+        });
       }
     } else {
       fieldMap.set(field.name, field);
