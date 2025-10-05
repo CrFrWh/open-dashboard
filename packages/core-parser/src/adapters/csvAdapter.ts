@@ -104,12 +104,20 @@ export class CSVAdapter implements DataAdapter {
       Papa.parse(content, {
         header: options.hasHeader !== false,
         delimiter: options.delimiter || ",",
-        skipEmptyLines: true,
         dynamicTyping: options.inferTypes !== false,
         transformHeader: (header: string) => header.trim(),
+        // Add these to handle malformed CSV more gracefully:
+        skipEmptyLines: "greedy", // Skip empty lines more aggressively
+        delimitersToGuess: [",", "\t", "|", ";"], // Auto-detect delimiter
+
         complete: (results) => {
-          if (results.errors.length > 0) {
-            const firstError = results.errors[0];
+          // Only reject if there are critical errors
+          const criticalErrors = results.errors.filter(
+            (err) => err.type === "Quotes" || err.type === "FieldMismatch"
+          );
+
+          if (criticalErrors.length > 0) {
+            const firstError = criticalErrors[0];
             reject(
               new DataParsingError(
                 `CSV parsing error: ${firstError.message}`,
