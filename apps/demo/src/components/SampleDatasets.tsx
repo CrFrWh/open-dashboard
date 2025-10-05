@@ -1,12 +1,7 @@
-interface Dataset {
-  id: string;
-  name: string;
-  data: Record<string, unknown>[];
-  schema: { field: string; type: string }[];
-}
+import type { ParsedDataset } from "@open-dashboard/shared/types";
 
 interface SampleDatasetsProps {
-  onDatasetSelected: (dataset: Dataset) => void;
+  onDatasetSelected: (dataset: ParsedDataset) => void;
 }
 
 const sampleDatasets = [
@@ -14,6 +9,7 @@ const sampleDatasets = [
     id: "sales-data",
     name: "Sales Data",
     description: "Monthly sales data with categories and regions",
+    sourceType: "json" as const,
     data: [
       {
         month: "Jan",
@@ -79,18 +75,21 @@ const sampleDatasets = [
         units: 125,
       },
     ],
-    schema: [
-      { field: "month", type: "string" },
-      { field: "category", type: "string" },
-      { field: "region", type: "string" },
-      { field: "sales", type: "number" },
-      { field: "units", type: "number" },
-    ],
+    schema: {
+      fields: [
+        { name: "month", type: "string" as const, nullable: false },
+        { name: "category", type: "categorical" as const, nullable: false },
+        { name: "region", type: "categorical" as const, nullable: false },
+        { name: "sales", type: "number" as const, nullable: false },
+        { name: "units", type: "number" as const, nullable: false },
+      ],
+    },
   },
   {
     id: "employee-data",
     name: "Employee Data",
     description: "Employee information with departments and salaries",
+    sourceType: "json" as const,
     data: [
       {
         id: 1,
@@ -149,18 +148,21 @@ const sampleDatasets = [
         years: 4,
       },
     ],
-    schema: [
-      { field: "id", type: "number" },
-      { field: "name", type: "string" },
-      { field: "department", type: "string" },
-      { field: "salary", type: "number" },
-      { field: "years", type: "number" },
-    ],
+    schema: {
+      fields: [
+        { name: "id", type: "number" as const, nullable: false },
+        { name: "name", type: "string" as const, nullable: false },
+        { name: "department", type: "string" as const, nullable: false },
+        { name: "salary", type: "number" as const, nullable: false },
+        { name: "years", type: "number" as const, nullable: false },
+      ],
+    },
   },
   {
     id: "product-data",
     name: "Product Inventory",
     description: "Product catalog with pricing and stock levels",
+    sourceType: "json" as const,
     data: [
       {
         sku: "ELEC001",
@@ -219,14 +221,16 @@ const sampleDatasets = [
         rating: 4.6,
       },
     ],
-    schema: [
-      { field: "sku", type: "string" },
-      { field: "name", type: "string" },
-      { field: "category", type: "string" },
-      { field: "price", type: "number" },
-      { field: "stock", type: "number" },
-      { field: "rating", type: "number" },
-    ],
+    schema: {
+      fields: [
+        { name: "sku", type: "string" as const, nullable: false },
+        { name: "name", type: "string" as const, nullable: false },
+        { name: "category", type: "string" as const, nullable: false },
+        { name: "price", type: "number" as const, nullable: false },
+        { name: "stock", type: "number" as const, nullable: false },
+        { name: "rating", type: "number" as const, nullable: false },
+      ],
+    },
   },
 ];
 
@@ -234,11 +238,13 @@ export default function SampleDatasets({
   onDatasetSelected,
 }: SampleDatasetsProps) {
   const handleSelectDataset = (sampleData: (typeof sampleDatasets)[0]) => {
-    const dataset: Dataset = {
+    const dataset: ParsedDataset = {
       id: sampleData.id,
       name: sampleData.name,
       data: sampleData.data,
       schema: sampleData.schema,
+      sourceType: sampleData.sourceType,
+      createdAt: new Date(),
     };
     onDatasetSelected(dataset);
   };
@@ -256,17 +262,17 @@ export default function SampleDatasets({
               <h4 className="font-medium text-gray-900">{sample.name}</h4>
               <p className="text-sm text-gray-600 mt-1">{sample.description}</p>
               <div className="mt-2 flex flex-wrap gap-1">
-                {sample.schema.slice(0, 4).map((field) => (
+                {sample.schema.fields.slice(0, 4).map((field) => (
                   <span
-                    key={field.field}
+                    key={field.name}
                     className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded"
                   >
-                    {field.field}
+                    {field.name}
                   </span>
                 ))}
-                {sample.schema.length > 4 && (
+                {sample.schema.fields.length > 4 && (
                   <span className="text-xs text-gray-500">
-                    +{sample.schema.length - 4} more
+                    +{sample.schema.fields.length - 4} more
                   </span>
                 )}
               </div>

@@ -1,1 +1,2 @@
 bunx tsc -b
+bunx vitest run

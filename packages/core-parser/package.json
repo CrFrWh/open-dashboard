@@ -37,7 +37,10 @@
     "build:prod": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
     "@open-dashboard/shared": "workspace:*"

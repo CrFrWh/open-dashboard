@@ -1,20 +1,16 @@
 import { useState, useCallback } from "react";
+import type { ParsedDataset } from "@open-dashboard/shared/types";
 import DataUploader from "./DataUploader";
 import SampleDatasets from "./SampleDatasets";
 
-interface Dataset {
-  id: string;
-  name: string;
-  data: unknown[];
-  schema: { field: string; type: string }[];
-}
-
 export default function DashboardDemo() {
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
+  const [datasets, setDatasets] = useState<ParsedDataset[]>([]);
+  const [selectedDataset, setSelectedDataset] = useState<ParsedDataset | null>(
+    null
+  );
 
   const handleDatasetAdded = useCallback(
-    (dataset: Dataset) => {
+    (dataset: ParsedDataset) => {
       if (datasets.find((d) => d.id === dataset.id)) {
         return; // Avoid adding duplicates
       }
@@ -109,28 +105,28 @@ export default function DashboardDemo() {
                   <div className="flex-1">
                     <h4 className="font-medium">{dataset.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {dataset.data.length} rows, {dataset.schema.length}{" "}
+                      {dataset.data.length} rows, {dataset.schema.fields.length}{" "}
                       columns
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {dataset.schema.slice(0, 3).map((field) => (
+                      {dataset.schema.fields.slice(0, 3).map((field) => (
                         <span
-                          key={field.field}
+                          key={field.name}
                           className="text-xs bg-gray-100 px-2 py-1 rounded"
                         >
-                          {field.field}
+                          {field.name}
                         </span>
                       ))}
-                      {dataset.schema.length > 3 && (
+                      {dataset.schema.fields.length > 3 && (
                         <span className="text-xs text-gray-500">
-                          +{dataset.schema.length - 3} more
+                          +{dataset.schema.fields.length - 3} more
                         </span>
                       )}
                     </div>
                   </div>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent selecting the dataset
+                      e.stopPropagation();
                       handleDatasetDeleted(dataset.id);
                     }}
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded ml-2"
@@ -155,14 +151,6 @@ export default function DashboardDemo() {
               </div>
             ))}
           </div>
-
-          <div className="text-xs text-gray-500 mt-4">
-            <p>Click on a dataset to view its preview below.</p>
-            <p>
-              Hover over a dataset and click the delete icon to remove it from
-              the loaded datasets.
-            </p>
-          </div>
         </div>
       )}
 
@@ -182,12 +170,12 @@ export default function DashboardDemo() {
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50">
-                  {selectedDataset.schema.map((field) => (
+                  {selectedDataset.schema.fields.map((field) => (
                     <th
-                      key={field.field}
+                      key={field.name}
                       className="border border-gray-200 px-4 py-2 text-left font-medium"
                     >
-                      {field.field}
+                      {field.name}
                       <span className="text-xs text-gray-500 block">
                         {field.type}
                       </span>
@@ -198,14 +186,12 @@ export default function DashboardDemo() {
               <tbody>
                 {selectedDataset.data.slice(0, 5).map((row, index) => (
                   <tr key={index} className="hover:bg-gray-50">
-                    {selectedDataset.schema.map((field) => (
+                    {selectedDataset.schema.fields.map((field) => (
                       <td
-                        key={field.field}
+                        key={field.name}
                         className="border border-gray-200 px-4 py-2"
                       >
-                        {String(
-                          (row as Record<string, unknown>)[field.field] || ""
-                        )}
+                        {String(row[field.name] ?? "")}
                       </td>
                     ))}
                   </tr>
