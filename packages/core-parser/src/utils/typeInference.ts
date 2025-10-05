@@ -6,11 +6,33 @@ import type { TypeInferenceResult } from "../types/parser";
 export function isValidDate(value: string): boolean {
   if (!value || typeof value !== "string") return false;
 
+  // Check format first
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    // Try MM/DD/YYYY format
+    const usMatch = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (!usMatch) return false;
+  }
+
+  // Validate with Date constructor
   const date = new Date(value);
-  return (
-    !isNaN(date.getTime()) &&
-    value.match(/\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{2,4}$/) !== null
-  );
+  if (isNaN(date.getTime())) return false;
+
+  // For ISO format, verify components match (catches invalid dates)
+  if (match) {
+    const [, year, month, day] = match;
+    const parsed = new Date(value);
+    // Compare year, month (0-indexed), day
+    if (
+      parsed.getUTCFullYear() !== parseInt(year) ||
+      parsed.getUTCMonth() !== parseInt(month) - 1 ||
+      parsed.getUTCDate() !== parseInt(day)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -19,8 +41,27 @@ export function isValidDate(value: string): boolean {
 export function inferType(
   value: unknown
 ): "string" | "number" | "date" | "boolean" | "categorical" {
-  // Handle null/undefined/empty
-  if (value === null || value === undefined || value === "") {
+  // Null/undefined/empty string should be treated as string
+  if (value === null || value === undefined) return "string";
+
+  // Whitespace strings are still strings - don't trim here
+  if (typeof value === "string") {
+    // Empty string is string type
+    if (value === "") return "string";
+
+    // Check for date patterns BEFORE trimming
+    if (isValidDate(value)) return "date";
+
+    // Check for numbers (but not whitespace-only)
+    const trimmed = value.trim();
+    if (trimmed !== "") {
+      const num = Number(trimmed);
+      if (!isNaN(num) && isFinite(num)) {
+        return "number";
+      }
+    }
+
+    // Whitespace or any other string
     return "string";
   }
 
@@ -148,10 +189,14 @@ export function inferFieldType(
 
   // Check if this should be categorical (string with low cardinality)
   const uniqueValues = new Set(limitedSamples).size;
+
+  // More lenient categorical detection when field name suggests category
   const shouldBeCategorical =
-    (mostCommonType === "string" || fieldHints.isLikelyCategory) &&
+    mostCommonType === "string" &&
     uniqueValues <= 10 &&
-    uniqueValues < limitedSamples.length * 0.5;
+    (fieldHints.isLikelyCategory
+      ? true // Always categorical if field name suggests it and <= 10 unique values
+      : uniqueValues < limitedSamples.length * 0.5); // 50% threshold without hint
 
   // Determine final type with field name hints
   let finalType: TypeInferenceResult["type"] = shouldBeCategorical
@@ -182,29 +227,37 @@ export function inferFieldType(
     }
   }
 
-  if (
-    fieldHints.isLikelyBoolean &&
-    mostCommonType === "string" &&
-    uniqueValues <= 2
-  ) {
-    const values = new Set(
-      limitedSamples.filter((v) => v !== null && v !== undefined)
+  // Boolean detection: check if original values are strings with boolean patterns
+  // This allows string "1"/"0" to be detected as boolean, but not actual numbers 1/0
+  if (fieldHints.isLikelyBoolean && uniqueValues <= 2) {
+    const nonNullValues = limitedSamples.filter(
+      (v) => v !== null && v !== undefined
     );
-    const valueArray = Array.from(values).map((v) => String(v).toLowerCase());
-    if (
-      valueArray.every((v) =>
-        ["true", "false", "yes", "no", "1", "0", "y", "n"].includes(v)
-      )
-    ) {
-      finalType = "boolean";
-      warnings.push(
-        `Field "${fieldName}" looks like boolean with values: ${valueArray.join(", ")}`
+
+    // Check if all non-null values are strings (not actual numbers)
+    const allStrings = nonNullValues.every((v) => typeof v === "string");
+
+    if (allStrings) {
+      const valueStrings = Array.from(new Set(nonNullValues)).map((v) =>
+        String(v).toLowerCase()
       );
+
+      // Check if all values match boolean patterns
+      if (
+        valueStrings.every((v) =>
+          ["true", "false", "yes", "no", "1", "0", "y", "n"].includes(v)
+        )
+      ) {
+        finalType = "boolean";
+        warnings.push(
+          `Field "${fieldName}" looks like boolean with values: ${valueStrings.join(", ")}`
+        );
+      }
     }
   }
 
-  // Confidence warnings
-  if (confidence < 0.6) {
+  // Confidence warnings (use <= 0.6 to include exactly 60% confidence)
+  if (confidence <= 0.6) {
     warnings.push(
       `Low confidence (${(confidence * 100).toFixed(1)}%) in type inference for "${fieldName}". Field has mixed types.`
     );
