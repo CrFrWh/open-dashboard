@@ -1,23 +1,13 @@
-import type { ParsedDataset, DataAdapter } from "@open-dashboard/shared/types";
+import type {
+  ParsedDataset,
+  DataAdapter,
+  ParserOptions,
+} from "@open-dashboard/shared/types";
+
+// Re-export ParserOptions for convenience
+export type { ParserOptions } from "@open-dashboard/shared/types";
 
 // Extended parser-specific interfaces
-export interface ParserOptions {
-  /** Maximum number of rows to parse (for large files) */
-  maxRows?: number;
-  /** Whether to infer data types automatically */
-  inferTypes?: boolean;
-  /** Custom type mappings */
-  typeMapping?: Record<string, string>;
-  /** Encoding for text files */
-  encoding?: string;
-  /** Custom delimiter for CSV files */
-  delimiter?: string;
-  /** Whether to treat first row as header */
-  hasHeader?: boolean;
-  /** Sample size for type inference */
-  sampleSize?: number;
-}
-
 export interface ParseResult {
   success: boolean;
   data?: ParsedDataset;
