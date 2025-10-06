@@ -63,44 +63,48 @@ export function dataFieldToArrowType(
 export function arrowTypeToDataField(
   arrowType: arrow.DataType
 ): Pick<DataField, "type"> {
-  const typeId = arrowType.typeId;
+  // Use instanceof checks for reliable type detection in Apache Arrow v18
 
-  // Use arrow.Type enum for type checking
-  if (typeId === arrow.Type.Utf8 || typeId === arrow.Type.LargeUtf8) {
+  // String types
+  if (arrowType instanceof arrow.Utf8 || arrowType instanceof arrow.LargeUtf8) {
     return { type: "string" };
   }
 
+  // Number types
   if (
-    typeId === arrow.Type.Float64 ||
-    typeId === arrow.Type.Float32 ||
-    typeId === arrow.Type.Int32 ||
-    typeId === arrow.Type.Int64 ||
-    typeId === arrow.Type.Uint32 ||
-    typeId === arrow.Type.Uint64 ||
-    typeId === arrow.Type.Int16 ||
-    typeId === arrow.Type.Int8 ||
-    typeId === arrow.Type.Uint16 ||
-    typeId === arrow.Type.Uint8
+    arrowType instanceof arrow.Float64 ||
+    arrowType instanceof arrow.Float32 ||
+    arrowType instanceof arrow.Int32 ||
+    arrowType instanceof arrow.Int64 ||
+    arrowType instanceof arrow.Uint32 ||
+    arrowType instanceof arrow.Uint64 ||
+    arrowType instanceof arrow.Int16 ||
+    arrowType instanceof arrow.Int8 ||
+    arrowType instanceof arrow.Uint16 ||
+    arrowType instanceof arrow.Uint8
   ) {
     return { type: "number" };
   }
 
+  // Date types
   if (
-    typeId === arrow.Type.DateMillisecond ||
-    typeId === arrow.Type.DateDay ||
-    typeId === arrow.Type.TimestampMillisecond ||
-    typeId === arrow.Type.TimestampMicrosecond ||
-    typeId === arrow.Type.TimestampNanosecond ||
-    typeId === arrow.Type.TimestampSecond
+    arrowType instanceof arrow.DateMillisecond ||
+    arrowType instanceof arrow.DateDay ||
+    arrowType instanceof arrow.TimestampMillisecond ||
+    arrowType instanceof arrow.TimestampMicrosecond ||
+    arrowType instanceof arrow.TimestampNanosecond ||
+    arrowType instanceof arrow.TimestampSecond
   ) {
     return { type: "date" };
   }
 
-  if (typeId === arrow.Type.Bool) {
+  // Boolean type
+  if (arrowType instanceof arrow.Bool) {
     return { type: "boolean" };
   }
 
-  if (typeId === arrow.Type.Dictionary) {
+  // Dictionary (categorical) type
+  if (arrowType instanceof arrow.Dictionary) {
     return { type: "categorical" };
   }
 
@@ -123,14 +127,17 @@ export function createArrowField(
   const arrowType = dataFieldToArrowType(field, options);
   const nullable = field.nullable ?? true;
 
-  // Convert metadata object to Map<string, string> if present
+  // Convert metadata object to Map<string, string> if present and non-empty
   let metadataMap: Map<string, string> | undefined;
   if (field.metadata && typeof field.metadata === "object") {
-    metadataMap = new Map(
-      Object.entries(field.metadata)
-        .filter(([, v]) => v !== null && v !== undefined)
-        .map(([k, v]) => [k, String(v)])
-    );
+    const entries = Object.entries(field.metadata)
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => [k, String(v)] as [string, string]);
+
+    // Only create Map if there are entries
+    if (entries.length > 0) {
+      metadataMap = new Map(entries);
+    }
   }
 
   return new arrow.Field(field.name, arrowType, nullable, metadataMap);
@@ -147,12 +154,16 @@ export function extractDataFieldFromArrowField(
 ): DataField {
   const typeInfo = arrowTypeToDataField(arrowField.type);
 
+  // Convert metadata Map to object, but return undefined if empty or not present
+  let metadata: Record<string, unknown> | undefined;
+  if (arrowField.metadata && arrowField.metadata.size > 0) {
+    metadata = Object.fromEntries(arrowField.metadata);
+  }
+
   return {
     name: arrowField.name,
     type: typeInfo.type,
     nullable: arrowField.nullable,
-    metadata: arrowField.metadata
-      ? Object.fromEntries(arrowField.metadata)
-      : undefined,
+    metadata,
   };
 }
