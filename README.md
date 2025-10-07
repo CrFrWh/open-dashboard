@@ -120,3 +120,73 @@ MIT License - see [LICENSE](./LICENSE)
 ---
 
 Built with ❤️ using modern TypeScript, React 19, and rolldown-vite for maximum performance.
+
+# @open-dashboard/core-schema
+
+Schema inference, normalization, and data format conversion for Open Dashboard.
+
+## Features
+
+- **Apache Arrow Integration**: Convert datasets to/from Arrow Tables for high-performance analytics
+- **Arrow IPC Serialization**: Binary format for storage and network transfer
+- **Type System Bridge**: Map between Open Dashboard types and Arrow types
+- **Schema Normalization**: Ensure consistent schema structure across data sources
+
+## Installation
+
+```bash
+bun add @open-dashboard/core-schema
+```
+
+## Usage
+
+### Convert Dataset to Arrow Table
+
+```typescript
+import { datasetToArrow } from "@open-dashboard/core-schema";
+
+const { table, warnings } = datasetToArrow(dataset);
+// Use with DuckDB, Perspective, or other Arrow-compatible tools
+```
+
+### Serialize to Arrow IPC
+
+```typescript
+import { datasetToIPC, ipcToDataset } from "@open-dashboard/core-schema";
+
+// Save to browser storage
+const { buffer } = await datasetToIPC(dataset);
+await indexedDB.put("datasets", buffer);
+
+// Load from storage
+const loadedBuffer = await indexedDB.get("datasets");
+const dataset = await ipcToDataset(loadedBuffer);
+```
+
+### Working with Large Datasets
+
+```typescript
+import {
+  datasetToIPCPartitions,
+  mergeIPCFiles,
+} from "@open-dashboard/core-schema";
+
+// Split into 10,000 row chunks
+const partitions = await datasetToIPCPartitions(dataset, 10000);
+
+// Later: merge back together
+const merged = await mergeIPCFiles(partitions.map((p) => p.buffer));
+```
+
+## Architecture
+
+```
+ParsedDataset ←→ Arrow Table ←→ Arrow IPC Buffer
+     ↓              ↓                  ↓
+  JSON-like    Columnar Memory    Binary Format
+  (UI Layer)   (Analytics)        (Storage/Transfer)
+```
+
+## API Reference
+
+See [full documentation](../../docs/core-schema.md)
