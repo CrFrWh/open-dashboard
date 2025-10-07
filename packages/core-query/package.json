@@ -10,9 +10,10 @@
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.28.0",
-    "apache-arrow": "^18.0.0",
     "@open-dashboard/core-schema": "workspace:*",
-    "@open-dashboard/shared": "workspace:*"
+    "@open-dashboard/shared": "workspace:*",
+    "apache-arrow": "^18.0.0",
+    "duckdb-wasm": "duckdb/duckdb-wasm"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
