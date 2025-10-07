@@ -11,3 +11,5 @@ export * from "./converters";
 // Re-export utilities
 export * from "./utils/typeMapper";
 export * from "./utils/schemaNormaliser";
+
+export type { ArrowConversionOptions } from "./types/converters";

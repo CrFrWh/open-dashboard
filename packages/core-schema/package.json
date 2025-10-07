@@ -12,5 +12,8 @@
   "dependencies": {
     "apache-arrow": "^18.0.0",
     "@open-dashboard/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
   }
 }
