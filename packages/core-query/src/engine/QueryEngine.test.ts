@@ -3,7 +3,13 @@ import { QueryEngine } from "./QueryEngine";
 import type { ParsedDataset } from "@open-dashboard/shared/types";
 import { QueryError, RegistrationError } from "../types/query";
 
-describe("QueryEngine", () => {
+// DuckDB-WASM requires Web Worker support (browser environment)
+// Skip tests in Node/Bun environment
+const isBrowser =
+  typeof window !== "undefined" && typeof Worker !== "undefined";
+const describeOrSkip = isBrowser ? describe : describe.skip;
+
+describeOrSkip("QueryEngine", () => {
   let engine: QueryEngine;
   let testDataset: ParsedDataset;
 
