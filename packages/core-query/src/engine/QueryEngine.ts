@@ -13,6 +13,19 @@ import type {
 } from "../types/query";
 import { QueryExecutionError, RegistrationError } from "../types/query";
 
+// Import utilities
+import {
+  buildJoinQuery,
+  buildAggregateQuery,
+  buildParameterizedQuery,
+  buildTableInfoQuery,
+  buildCountQuery,
+  buildSampleQuery,
+  type JoinOptions,
+  type AggregateOptions,
+} from "../utils/queryHelpers";
+import { formatErrorMessage, validateSQL } from "../utils/errorHandling";
+
 /**
  * Resolved configuration with defaults applied
  */
@@ -613,5 +626,215 @@ export class QueryEngine {
     if (this.config.logQueries) {
       console.log("🔌 QueryEngine disposed");
     }
+  }
+
+  /**
+   * Execute a JOIN query across multiple datasets
+   *
+   * @param options - Join configuration
+   * @returns Query result
+   * @throws {QueryExecutionError} If query execution fails
+   *
+   * @example
+   * ```typescript
+   * const result = await engine.queryJoin({
+   *   tables: [
+   *     { name: "sales", alias: "s" },
+   *     { name: "employees", alias: "e" }
+   *   ],
+   *   on: [{ left: "s.employee_id", right: "e.id" }],
+   *   select: ["s.amount", "e.name", "e.department"],
+   *   where: "s.amount > 1000"
+   * });
+   * ```
+   */
+  async queryJoin(options: JoinOptions): Promise<QueryResult> {
+    const sql = buildJoinQuery(options);
+    return this.query(sql);
+  }
+
+  /**
+   * Execute an aggregation query for metrics and analytics
+   *
+   * @param options - Aggregation configuration
+   * @returns Query result with aggregated data
+   * @throws {QueryExecutionError} If query execution fails
+   *
+   * @example
+   * ```typescript
+   * // Get total sales by region
+   * const result = await engine.queryAggregate({
+   *   table: "sales",
+   *   field: "amount",
+   *   operation: "SUM",
+   *   groupBy: ["region"],
+   *   alias: "total_sales"
+   * });
+   * ```
+   */
+  async queryAggregate(options: AggregateOptions): Promise<QueryResult> {
+    const sql = buildAggregateQuery(options);
+    return this.query(sql);
+  }
+
+  /**
+   * Execute a parameterized query (prevents SQL injection)
+   *
+   * @param sql - SQL query with $param placeholders
+   * @param params - Parameter values to substitute
+   * @param options - Query execution options
+   * @returns Query result
+   * @throws {QueryExecutionError} If query execution fails
+   *
+   * @example
+   * ```typescript
+   * const result = await engine.queryWithParams(
+   *   "SELECT * FROM sales WHERE region = $region AND amount > $minAmount",
+   *   { region: "North", minAmount: 1000 }
+   * );
+   * ```
+   */
+  async queryWithParams(
+    sql: string,
+    params: Record<string, unknown>,
+    options?: QueryOptions
+  ): Promise<QueryResult> {
+    const parameterizedSQL = buildParameterizedQuery(sql, params);
+    return this.query(parameterizedSQL, options);
+  }
+
+  /**
+   * Get table metadata and column information
+   *
+   * @param tableName - Name of the registered table
+   * @returns Table information including columns and types
+   * @throws {QueryExecutionError} If query execution fails
+   *
+   * @example
+   * ```typescript
+   * const info = await engine.getTableInfo("sales");
+   * console.log(info.columns); // [{ name: "region", type: "VARCHAR", ... }]
+   * ```
+   */
+  async getTableInfo(tableName: string): Promise<{
+    name: string;
+    columns: Array<{
+      name: string;
+      type: string;
+      nullable: boolean;
+    }>;
+    rowCount: number;
+  }> {
+    if (!this.isTableRegistered(tableName)) {
+      throw new QueryExecutionError(
+        `Table '${tableName}' is not registered`,
+        "",
+        undefined
+      );
+    }
+
+    try {
+      // Get column information
+      const infoSQL = buildTableInfoQuery(tableName);
+      const columnsResult = await this.query(infoSQL);
+
+      // Get row count
+      const countSQL = buildCountQuery(tableName);
+      const countResult = await this.query(countSQL);
+      const rowCount = (countResult.data[0]?.count as number) ?? 0;
+
+      return {
+        name: tableName,
+        columns: columnsResult.data.map((row) => ({
+          name: row.column_name as string,
+          type: row.data_type as string,
+          nullable: row.is_nullable === "YES",
+        })),
+        rowCount,
+      };
+    } catch (error) {
+      throw new QueryExecutionError(
+        formatErrorMessage(error, {
+          operation: "Get table info",
+          tableName,
+        }),
+        "",
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  /**
+   * Get row count for a table
+   *
+   * @param tableName - Name of the registered table
+   * @param where - Optional WHERE clause for conditional count
+   * @returns Row count
+   * @throws {QueryExecutionError} If query execution fails
+   *
+   * @example
+   * ```typescript
+   * const total = await engine.getRowCount("sales");
+   * const filtered = await engine.getRowCount("sales", "amount > 1000");
+   * ```
+   */
+  async getRowCount(tableName: string, where?: string): Promise<number> {
+    const sql = buildCountQuery(tableName, where);
+    const result = await this.query(sql);
+    return (result.data[0]?.count as number) ?? 0;
+  }
+
+  /**
+   * Get a sample of data from a table
+   *
+   * @param tableName - Name of the registered table
+   * @param options - Sampling options
+   * @returns Query result with sampled data
+   * @throws {QueryExecutionError} If query execution fails
+   *
+   * @example
+   * ```typescript
+   * // Get first 50 rows
+   * const sample = await engine.sample("sales", { limit: 50 });
+   *
+   * // Get random 100 rows
+   * const random = await engine.sample("sales", { limit: 100, random: true });
+   * ```
+   */
+  async sample(
+    tableName: string,
+    options?: {
+      limit?: number;
+      random?: boolean;
+      where?: string;
+    }
+  ): Promise<QueryResult> {
+    const sql = buildSampleQuery(tableName, options);
+    return this.query(sql);
+  }
+
+  /**
+   * Validate SQL query before execution
+   *
+   * @param sql - SQL query to validate
+   * @returns Validation result with warnings and errors
+   *
+   * @example
+   * ```typescript
+   * const validation = engine.validateQuery("SELECT * FROM sales");
+   * if (!validation.valid) {
+   *   console.error("Invalid query:", validation.errors);
+   * }
+   * if (validation.warnings.length > 0) {
+   *   console.warn("Warnings:", validation.warnings);
+   * }
+   * ```
+   */
+  validateQuery(sql: string): {
+    valid: boolean;
+    warnings: string[];
+    errors: string[];
+  } {
+    return validateSQL(sql);
   }
 }
