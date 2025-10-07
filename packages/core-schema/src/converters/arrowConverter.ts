@@ -378,9 +378,19 @@ export function arrowToDataset(table: arrow.Table): ParsedDataset {
         // Convert Arrow value to JavaScript primitive
         if (value === null || value === undefined) {
           row[fieldName] = null;
-        } else if (fieldType === "date" && typeof value === "number") {
-          // Convert timestamp back to Date object
-          row[fieldName] = new Date(value);
+        } else if (fieldType === "date") {
+          // Handle date/timestamp conversion - Arrow returns numbers or BigInts
+          if (typeof value === "number") {
+            row[fieldName] = new Date(value);
+          } else if (typeof value === "bigint") {
+            // Convert BigInt timestamp to Date (microsecond/nanosecond precision)
+            row[fieldName] = new Date(Number(value / 1000n));
+          } else if (value instanceof Date) {
+            row[fieldName] = value;
+          } else {
+            // Fallback: try to parse as timestamp
+            row[fieldName] = new Date(Number(value));
+          }
         } else if (value instanceof Date) {
           row[fieldName] = value;
         } else if (typeof value === "bigint") {

@@ -70,10 +70,11 @@ export function arrowTypeToDataField(
     return { type: "string" };
   }
 
-  // Number types
+  // Number types - including base Float class for IPC deserialization
   if (
     arrowType instanceof arrow.Float64 ||
     arrowType instanceof arrow.Float32 ||
+    arrowType instanceof arrow.Float || // ← ADD THIS for IPC
     arrowType instanceof arrow.Int32 ||
     arrowType instanceof arrow.Int64 ||
     arrowType instanceof arrow.Uint32 ||
@@ -81,19 +82,22 @@ export function arrowTypeToDataField(
     arrowType instanceof arrow.Int16 ||
     arrowType instanceof arrow.Int8 ||
     arrowType instanceof arrow.Uint16 ||
-    arrowType instanceof arrow.Uint8
+    arrowType instanceof arrow.Uint8 ||
+    arrowType instanceof arrow.Int // ← ADD THIS for IPC integer types
   ) {
     return { type: "number" };
   }
 
-  // Date types
+  // Date types - including base Date_ class for IPC deserialization
   if (
     arrowType instanceof arrow.DateMillisecond ||
     arrowType instanceof arrow.DateDay ||
+    arrowType instanceof arrow.Date_ || // ← ADD THIS for IPC
     arrowType instanceof arrow.TimestampMillisecond ||
     arrowType instanceof arrow.TimestampMicrosecond ||
     arrowType instanceof arrow.TimestampNanosecond ||
-    arrowType instanceof arrow.TimestampSecond
+    arrowType instanceof arrow.TimestampSecond ||
+    arrowType instanceof arrow.Timestamp // ← ADD THIS for IPC timestamp types
   ) {
     return { type: "date" };
   }
