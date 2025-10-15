@@ -17,10 +17,7 @@
       "@open-dashboard/ui-widgets/*": ["../ui-widgets/src/*"]
     },
 
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-
-    "types": ["node"],
-    "typeRoots": ["../../node_modules/@types", "./node_modules/@types"]
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*"],
   "exclude": [
