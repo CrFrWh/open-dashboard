@@ -4,4 +4,9 @@
  * Type definitions for converter options and internal types.
  */
 
-export type { ArrowConversionOptions } from "./converters";
+export type {
+  ArrowConversionOptions,
+  ParquetOptions,
+  SchemaConversionResult,
+  ArrowConversionError,
+} from "./converters";
