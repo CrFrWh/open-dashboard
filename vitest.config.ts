@@ -29,10 +29,16 @@ export default defineConfig({
 
     // Test file patterns
     include: [
-      "packages/**/*.{test,spec}.{ts,tsx}",
+      "packages/*/src/**/*.{test,spec}.{ts,tsx}",
       "shared/**/*.{test,spec}.{ts,tsx}",
     ],
-    exclude: ["node_modules", "dist", ".husky", "apps/demo"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      ".husky",
+      "apps/demo",
+      "packages/*/node_modules/**",
+    ],
 
     // Timeout for tests
     testTimeout: 10000,
