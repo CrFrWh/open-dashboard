@@ -1,11 +1,12 @@
 import { useState } from "react";
 import "./App.css";
 import DashboardDemo from "./components/DashboardDemo";
+import DashboardBuilderExample from "./components/DashboardBuilderExample";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<"demo" | "widgets" | "api">(
-    "demo"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "demo" | "builder" | "widgets" | "api"
+  >("demo");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -29,7 +30,17 @@ function App() {
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                Dashboard Demo
+                Data Demo
+              </button>
+              <button
+                onClick={() => setActiveTab("builder")}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === "builder"
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Grid Builder
               </button>
               <button
                 onClick={() => setActiveTab("widgets")}
@@ -58,6 +69,7 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === "demo" && <DashboardDemo />}
+        {activeTab === "builder" && <DashboardBuilderExample />}
         {activeTab === "widgets" && (
           <div className="text-center py-16">
             <h2 className="text-xl font-semibold mb-4">Widget Gallery</h2>
